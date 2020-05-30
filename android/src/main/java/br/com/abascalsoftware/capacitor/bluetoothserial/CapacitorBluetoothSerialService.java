@@ -27,7 +27,7 @@ import android.util.Log;
 public class CapacitorBluetoothSerialService {
 
     // Debugging
-    private static final String TAG = "CapacitorBluetoothSerialService";
+    private static final String TAG = "CapBluSerService";
     private static final boolean D = true;
 
     // Name for the SDP record when creating server socket
@@ -75,7 +75,7 @@ public class CapacitorBluetoothSerialService {
         mState = state;
 
         // Give the new state to the Handler so the UI Activity can update
-        mHandler.obtainMessage(BluetoothSerial.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+        mHandler.obtainMessage(CapacitorBluetoothSerial.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
     }
 
     /**
@@ -163,9 +163,9 @@ public class CapacitorBluetoothSerialService {
         mConnectedThread.start();
 
         // Send the name of the connected device back to the UI Activity
-        Message msg = mHandler.obtainMessage(BluetoothSerial.MESSAGE_DEVICE_NAME);
+        Message msg = mHandler.obtainMessage(CapacitorBluetoothSerial.MESSAGE_DEVICE_NAME);
         Bundle bundle = new Bundle();
-        bundle.putString(BluetoothSerial.DEVICE_NAME, device.getName());
+        bundle.putString(CapacitorBluetoothSerial.DEVICE_NAME, device.getName());
         msg.setData(bundle);
         mHandler.sendMessage(msg);
 
@@ -222,9 +222,9 @@ public class CapacitorBluetoothSerialService {
      */
     private void connectionFailed() {
         // Send a failure message back to the Activity
-        Message msg = mHandler.obtainMessage(BluetoothSerial.MESSAGE_TOAST);
+        Message msg = mHandler.obtainMessage(CapacitorBluetoothSerial.MESSAGE_TOAST);
         Bundle bundle = new Bundle();
-        bundle.putString(BluetoothSerial.TOAST, "Unable to connect to device");
+        bundle.putString(CapacitorBluetoothSerial.TOAST, "Unable to connect to device");
         msg.setData(bundle);
         mHandler.sendMessage(msg);
 
@@ -237,9 +237,9 @@ public class CapacitorBluetoothSerialService {
      */
     private void connectionLost() {
         // Send a failure message back to the Activity
-        Message msg = mHandler.obtainMessage(BluetoothSerial.MESSAGE_TOAST);
+        Message msg = mHandler.obtainMessage(CapacitorBluetoothSerial.MESSAGE_TOAST);
         Bundle bundle = new Bundle();
-        bundle.putString(BluetoothSerial.TOAST, "Device connection was lost");
+        bundle.putString(CapacitorBluetoothSerial.TOAST, "Device connection was lost");
         msg.setData(bundle);
         mHandler.sendMessage(msg);
 
@@ -452,14 +452,14 @@ public class CapacitorBluetoothSerialService {
                     String data = new String(buffer, 0, bytes);
 
                     // Send the new data String to the UI Activity
-                    mHandler.obtainMessage(BluetoothSerial.MESSAGE_READ, data).sendToTarget();
+                    mHandler.obtainMessage(CapacitorBluetoothSerial.MESSAGE_READ, data).sendToTarget();
 
                     // Send the raw bytestream to the UI Activity.
                     // We make a copy because the full array can have extra data at the end
                     // when / if we read less than its size.
                     if (bytes > 0) {
                         byte[] rawdata = Arrays.copyOf(buffer, bytes);
-                        mHandler.obtainMessage(BluetoothSerial.MESSAGE_READ_RAW, rawdata).sendToTarget();
+                        mHandler.obtainMessage(CapacitorBluetoothSerial.MESSAGE_READ_RAW, rawdata).sendToTarget();
                     }
 
                 } catch (IOException e) {
@@ -481,7 +481,7 @@ public class CapacitorBluetoothSerialService {
                 mmOutStream.write(buffer);
 
                 // Share the sent message back to the UI Activity
-                mHandler.obtainMessage(BluetoothSerial.MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
+                mHandler.obtainMessage(CapacitorBluetoothSerial.MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
 
             } catch (IOException e) {
                 Log.e(TAG, "Exception during write", e);

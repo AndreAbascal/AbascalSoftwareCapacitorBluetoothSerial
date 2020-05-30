@@ -35,7 +35,14 @@ import java.util.Set;
 /**
  * PhoneGap Plugin for Serial Communication over Bluetooth
  */
-@NativePlugin()
+@NativePlugin(
+	permissions = {
+
+	},
+	requestCodes = {
+		CapacitorBluetoothSerial.REQUEST_ENABLE_BLUETOOTH
+	}
+)
 public class CapacitorBluetoothSerial extends Plugin {
 
 	// actions
@@ -73,7 +80,7 @@ public class CapacitorBluetoothSerial extends Plugin {
 	private CapacitorBluetoothSerialService capacitorBluetoothSerialService;
 
 	// Debugging
-	private static final String TAG = "BluetoothSerial";
+	private static final String TAG = "CapBluSer";
 	private static final boolean D = true;
 
 	// Message types sent from the CapacitorBluetoothSerialService Handler
@@ -90,7 +97,7 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	StringBuffer buffer = new StringBuffer();
 	private String delimiter;
-	private static final int REQUEST_ENABLE_BLUETOOTH = 1;
+	public static final int REQUEST_ENABLE_BLUETOOTH = 43937;
 
 	// Android 23 requires user to explicitly grant permission for location to
 	// discover unpaired
