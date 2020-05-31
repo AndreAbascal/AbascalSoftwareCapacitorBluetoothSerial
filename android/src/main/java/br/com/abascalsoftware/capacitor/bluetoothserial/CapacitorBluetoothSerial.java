@@ -105,25 +105,41 @@ public class CapacitorBluetoothSerial extends Plugin {
 	private static final int CHECK_PERMISSIONS_REQ_CODE = 2;
 	private PluginCall permissionCallback;
 
+	private void checkEntities(){
+		Log.d(TAG,"checkEntities 01");
+		if (this.bluetoothAdapter == null) {
+			Log.d(TAG,"checkEntities 01.1");
+			this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+			Log.d(TAG,"checkEntities 01.2");
+		}
+		Log.d(TAG,"checkEntities 02");
+		if (this.capacitorBluetoothSerialService == null) {
+			Log.d(TAG,"checkEntities 02.1");
+			this.capacitorBluetoothSerialService = new CapacitorBluetoothSerialService(mHandler);
+			Log.d(TAG,"checkEntities 02.2");
+		}
+		Log.d(TAG,"checkEntities 03");
+	}
+
 	@PluginMethod()
 	public void clear(PluginCall call) {
+		Log.d(TAG,"clear 01");
+		this.checkEntities();
+		Log.d(TAG,"clear 02");
 		buffer.setLength(0);
+		Log.d(TAG,"clear 03");
 		call.resolve();
 	}
 
 	@PluginMethod()
 	public void connect(PluginCall call) {
+		this.checkEntities();
 		String macAddress = call.getString("address");
-		BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
+		BluetoothDevice device = this.bluetoothAdapter.getRemoteDevice(macAddress);
 		if (device != null) {
-			// connectCallback = callbackContext;
 			connectCallback = call;
-			capacitorBluetoothSerialService.connect(device, true);
+			this.capacitorBluetoothSerialService.connect(device, true);
 			buffer.setLength(0);
-			// saveCall(call);
-			// PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
-			// result.setKeepCallback(true);
-			// callbackContext.sendPluginResult(result);
 		} else {
 			call.reject("Could not connect to " + macAddress);
 		}
@@ -131,17 +147,13 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void connectInsecure(PluginCall call) {
+		this.checkEntities();
 		String macAddress = call.getString("address");
-		BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
+		BluetoothDevice device = this.bluetoothAdapter.getRemoteDevice(macAddress);
 		if (device != null) {
-			// connectCallback = callbackContext;
 			connectCallback = call;
-			capacitorBluetoothSerialService.connect(device, false);
+			this.capacitorBluetoothSerialService.connect(device, false);
 			buffer.setLength(0);
-			// saveCall(call);
-			// PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
-			// result.setKeepCallback(true);
-			// callbackContext.sendPluginResult(result);
 		} else {
 			call.reject("Could not connect to " + macAddress);
 		}
@@ -149,13 +161,15 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void disconnect(PluginCall call) {
+		this.checkEntities();
 		connectCallback = null;
-		capacitorBluetoothSerialService.stop();
+		this.capacitorBluetoothSerialService.stop();
 		call.resolve();
 	}
 
 	@PluginMethod()
 	public void enable(PluginCall call) {
+		this.checkEntities();
 		enableBluetoothCallback = call;
 		Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
 		startActivityForResult(call, intent, REQUEST_ENABLE_BLUETOOTH);
@@ -163,7 +177,8 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void isConnected(PluginCall call) {
-		if (capacitorBluetoothSerialService.getState() == CapacitorBluetoothSerialService.STATE_CONNECTED) {
+		this.checkEntities();
+		if (this.capacitorBluetoothSerialService.getState() == CapacitorBluetoothSerialService.STATE_CONNECTED) {
 			call.resolve();
 		} else {
 			call.reject("Not connected.");
@@ -172,7 +187,8 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void isEnabled(PluginCall call) {
-		if (bluetoothAdapter.isEnabled()) {
+		this.checkEntities();
+		if (this.bluetoothAdapter.isEnabled()) {
 			call.resolve();
 		} else {
 			call.reject("Bluetooth is disabled.");
@@ -181,6 +197,7 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void subscribeRawData(PluginCall call) {
+		this.checkEntities();
 		rawDataAvailableCallback = call;
 		// PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
 		// result.setKeepCallback(true);
@@ -189,180 +206,17 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void write(PluginCall call) {
+		this.checkEntities();
 		String _data = call.getString("data");
 		byte[] data = _data.getBytes();
-		capacitorBluetoothSerialService.write(data);
+		this.capacitorBluetoothSerialService.write(data);
 		call.resolve();
 	}
-
-	/*
-	@Override
-	public boolean execute(String action, CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-
-		LOG.d(TAG, "action = " + action);
-
-		if (bluetoothAdapter == null) {
-			bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-		}
-
-		if (capacitorBluetoothSerialService == null) {
-			capacitorBluetoothSerialService = new CapacitorBluetoothSerialService(mHandler);
-		}
-
-		boolean validAction = true;
-
-		if (action.equals(LIST)) {
-
-			listBondedDevices(callbackContext);
-
-		} else if (action.equals(CONNECT)) {
-
-			boolean secure = true;
-			connect(args, secure, callbackContext);
-
-		} else if (action.equals(CONNECT_INSECURE)) {
-
-			// see Android docs about Insecure RFCOMM http://goo.gl/1mFjZY
-			boolean secure = false;
-			connect(args, secure, callbackContext);
-
-		} else if (action.equals(DISCONNECT)) {
-
-			connectCallback = null;
-			capacitorBluetoothSerialService.stop();
-			callbackContext.success();
-
-		} else if (action.equals(WRITE)) {
-
-			byte[] data = args.getArrayBuffer(0);
-			capacitorBluetoothSerialService.write(data);
-			callbackContext.success();
-
-		} else if (action.equals(AVAILABLE)) {
-
-			callbackContext.success(available());
-
-		} else if (action.equals(READ)) {
-
-			callbackContext.success(read());
-
-		} else if (action.equals(READ_UNTIL)) {
-
-			String interesting = args.getString(0);
-			callbackContext.success(readUntil(interesting));
-
-		} else if (action.equals(SUBSCRIBE)) {
-
-			delimiter = args.getString(0);
-			dataAvailableCallback = callbackContext;
-
-			PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
-			result.setKeepCallback(true);
-			callbackContext.sendPluginResult(result);
-
-		} else if (action.equals(UNSUBSCRIBE)) {
-
-			delimiter = null;
-
-			// send no result, so Cordova won't hold onto the data available callback
-			// anymore
-			PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
-			dataAvailableCallback.sendPluginResult(result);
-			dataAvailableCallback = null;
-
-			callbackContext.success();
-
-		} else if (action.equals(SUBSCRIBE_RAW)) {
-
-			rawDataAvailableCallback = callbackContext;
-
-			PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
-			result.setKeepCallback(true);
-			callbackContext.sendPluginResult(result);
-
-		} else if (action.equals(UNSUBSCRIBE_RAW)) {
-
-			rawDataAvailableCallback = null;
-
-			callbackContext.success();
-
-		} else if (action.equals(IS_ENABLED)) {
-
-			if (bluetoothAdapter.isEnabled()) {
-				callbackContext.success();
-			} else {
-				callbackContext.error("Bluetooth is disabled.");
-			}
-
-		} else if (action.equals(IS_CONNECTED)) {
-
-			if (capacitorBluetoothSerialService.getState() == CapacitorBluetoothSerialService.STATE_CONNECTED) {
-				callbackContext.success();
-			} else {
-				callbackContext.error("Not connected.");
-			}
-
-		} else if (action.equals(CLEAR)) {
-
-			buffer.setLength(0);
-			callbackContext.success();
-
-		} else if (action.equals(SETTINGS)) {
-
-			Intent intent = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
-			cordova.getActivity().startActivity(intent);
-			callbackContext.success();
-
-		} else if (action.equals(ENABLE)) {
-
-			enableBluetoothCallback = callbackContext;
-			Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-			cordova.startActivityForResult(this, intent, REQUEST_ENABLE_BLUETOOTH);
-
-		} else if (action.equals(DISCOVER_UNPAIRED)) {
-
-			if (cordova.hasPermission(ACCESS_COARSE_LOCATION)) {
-				discoverUnpairedDevices(callbackContext);
-			} else {
-				permissionCallback = callbackContext;
-				cordova.requestPermission(this, CHECK_PERMISSIONS_REQ_CODE, ACCESS_COARSE_LOCATION);
-			}
-
-		} else if (action.equals(SET_DEVICE_DISCOVERED_LISTENER)) {
-
-			this.deviceDiscoveredCallback = callbackContext;
-
-		} else if (action.equals(CLEAR_DEVICE_DISCOVERED_LISTENER)) {
-
-			this.deviceDiscoveredCallback = null;
-
-		} else if (action.equals(SET_NAME)) {
-
-			String newName = args.getString(0);
-			bluetoothAdapter.setName(newName);
-			callbackContext.success();
-
-		} else if (action.equals(SET_DISCOVERABLE)) {
-
-			int discoverableDuration = args.getInt(0);
-			Intent discoverIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-			discoverIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, discoverableDuration);
-			cordova.getActivity().startActivity(discoverIntent);
-
-		} else {
-			validAction = false;
-
-		}
-
-		return validAction;
-	}
-	*/
 
 	@Override
   	protected void handleOnActivityResult(int requestCode, int resultCode, Intent data) {
 		super.handleOnActivityResult(requestCode, resultCode, data);
 		if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
-
 			if (resultCode == Activity.RESULT_OK) {
 				Log.d(TAG, "User enabled Bluetooth");
 				if (enableBluetoothCallback != null) {
@@ -374,7 +228,6 @@ public class CapacitorBluetoothSerial extends Plugin {
 					enableBluetoothCallback.error("User did not enable Bluetooth");
 				}
 			}
-
 			enableBluetoothCallback = null;
 		}
     }
@@ -382,89 +235,10 @@ public class CapacitorBluetoothSerial extends Plugin {
 	@Override
 	public void handleOnStop() {
 		super.handleOnStop();
-		if (capacitorBluetoothSerialService != null) {
-			capacitorBluetoothSerialService.stop();
+		if (this.capacitorBluetoothSerialService != null) {
+			this.capacitorBluetoothSerialService.stop();
 		}
 	}
-
-	/*
-	private void listBondedDevices(CallbackContext callbackContext) throws JSONException {
-		JSONArray deviceList = new JSONArray();
-		Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
-
-		for (BluetoothDevice device : bondedDevices) {
-			deviceList.put(deviceToJSON(device));
-		}
-		callbackContext.success(deviceList);
-	}
-
-	private void discoverUnpairedDevices(final CallbackContext callbackContext) throws JSONException {
-
-		final CallbackContext ddc = deviceDiscoveredCallback;
-
-		final BroadcastReceiver discoverReceiver = new BroadcastReceiver() {
-
-			private JSONArray unpairedDevices = new JSONArray();
-
-			public void onReceive(Context context, Intent intent) {
-				String action = intent.getAction();
-				if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-					BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-					try {
-						JSONObject o = deviceToJSON(device);
-						unpairedDevices.put(o);
-						if (ddc != null) {
-							PluginResult res = new PluginResult(PluginResult.Status.OK, o);
-							res.setKeepCallback(true);
-							ddc.sendPluginResult(res);
-						}
-					} catch (JSONException e) {
-						// This shouldn't happen, log and ignore
-						Log.e(TAG, "Problem converting device to JSON", e);
-					}
-				} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-					callbackContext.success(unpairedDevices);
-					cordova.getActivity().unregisterReceiver(this);
-				}
-			}
-		};
-
-		Activity activity = cordova.getActivity();
-		activity.registerReceiver(discoverReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
-		activity.registerReceiver(discoverReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
-		bluetoothAdapter.startDiscovery();
-	}
-	
-
-	private JSONObject deviceToJSON(BluetoothDevice device) throws JSONException {
-		JSONObject json = new JSONObject();
-		json.put("name", device.getName());
-		json.put("address", device.getAddress());
-		json.put("id", device.getAddress());
-		if (device.getBluetoothClass() != null) {
-			json.put("class", device.getBluetoothClass().getDeviceClass());
-		}
-		return json;
-	}
-
-	private void connect(CordovaArgs args, boolean secure, CallbackContext callbackContext) throws JSONException {
-		String macAddress = args.getString(0);
-		BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
-
-		if (device != null) {
-			connectCallback = callbackContext;
-			capacitorBluetoothSerialService.connect(device, secure);
-			buffer.setLength(0);
-
-			PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
-			result.setKeepCallback(true);
-			callbackContext.sendPluginResult(result);
-
-		} else {
-			callbackContext.error("Could not connect to " + macAddress);
-		}
-	}
-	*/
 
 	// The Handler that gets information back from the CapacitorBluetoothSerialService
 	// Original code used handler for the because it was talking to the UI.
@@ -473,14 +247,6 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-				case MESSAGE_READ:
-					buffer.append((String) msg.obj);
-
-					if (dataAvailableCallback != null) {
-						// sendDataToSubscriber();
-					}
-
-					break;
 				case MESSAGE_READ_RAW:
 					if (rawDataAvailableCallback != null) {
 						byte[] bytes = (byte[]) msg.obj;
@@ -508,9 +274,9 @@ public class CapacitorBluetoothSerial extends Plugin {
 					}
 					break;
 				case MESSAGE_WRITE:
-					// byte[] writeBuf = (byte[]) msg.obj;
-					// String writeMessage = new String(writeBuf);
-					// Log.i(TAG, "Wrote: " + writeMessage);
+					byte[] writeBuf = (byte[]) msg.obj;
+					String writeMessage = new String(writeBuf);
+					Log.i(TAG, "Wrote: " + writeMessage);
 					break;
 				case MESSAGE_DEVICE_NAME:
 					Log.i(TAG, msg.getData().getString(DEVICE_NAME));
@@ -534,9 +300,6 @@ public class CapacitorBluetoothSerial extends Plugin {
 		if (connectCallback != null) {
 			connectCallback.resolve();
 			connectCallback = null;
-			// PluginResult result = new PluginResult(PluginResult.Status.OK);
-			// result.setKeepCallback(true);
-			// connectCallback.sendPluginResult(result);
 		}
 	}
 
@@ -548,9 +311,6 @@ public class CapacitorBluetoothSerial extends Plugin {
 			JSObject obj = new JSObject();
 			obj.put("data", data);
 			rawDataAvailableCallback.resolve(obj);
-			// PluginResult result = new PluginResult(PluginResult.Status.OK, data);
-			// result.setKeepCallback(true);
-			// rawDataAvailableCallback.sendPluginResult(result);
 		}
 	}
 
