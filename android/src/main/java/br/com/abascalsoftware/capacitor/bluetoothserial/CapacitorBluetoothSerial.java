@@ -37,7 +37,10 @@ import java.util.Set;
  */
 @NativePlugin(
 	permissions = {
-
+		Manifest.permission.ACCESS_COARSE_LOCATION,
+		Manifest.permission.ACCESS_FINE_LOCATION,
+		Manifest.permission.BLUETOOTH,
+		Manifest.permission.BLUETOOTH_ADMIN
 	},
 	requestCodes = {
 		CapacitorBluetoothSerial.REQUEST_ENABLE_BLUETOOTH
@@ -68,6 +71,7 @@ public class CapacitorBluetoothSerial extends Plugin {
 	private static final String CLEAR_DEVICE_DISCOVERED_LISTENER = "clearDeviceDiscoveredListener";
 	private static final String SET_NAME = "setName";
 	private static final String SET_DISCOVERABLE = "setDiscoverable";
+	private static final String PERMISSION_BT_DENIED = "É necessário permitir o uso do Bluetooth para prosseguir.";
 
 	// callbacks
 	private PluginCall connectCallback;
@@ -123,6 +127,7 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void clear(PluginCall call) {
+		saveCall(call);
 		Log.d(TAG,"clear 01");
 		this.checkEntities();
 		Log.d(TAG,"clear 02");
@@ -133,20 +138,34 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void connect(PluginCall call) {
+		Log.d(TAG,"connect 01");
+		saveCall(call);
+		Log.d(TAG,"connect 02");
 		this.checkEntities();
+		Log.d(TAG,"connect 03");
+		JSObject data = call.getData();
+		Log.d(TAG,"connect call data: "+data.toString());
 		String macAddress = call.getString("address");
+		Log.d(TAG,"connect 04");
 		BluetoothDevice device = this.bluetoothAdapter.getRemoteDevice(macAddress);
+		Log.d(TAG,"connect 05");
 		if (device != null) {
+			Log.d(TAG,"connect 05.1");
 			connectCallback = call;
+			Log.d(TAG,"connect 05.2");
 			this.capacitorBluetoothSerialService.connect(device, true);
+			Log.d(TAG,"connect 05.3");
 			buffer.setLength(0);
+			Log.d(TAG,"connect 05.4");
 		} else {
+			Log.d(TAG,"connect 06");
 			call.reject("Could not connect to " + macAddress);
 		}
 	}
 
 	@PluginMethod()
 	public void connectInsecure(PluginCall call) {
+		saveCall(call);
 		this.checkEntities();
 		String macAddress = call.getString("address");
 		BluetoothDevice device = this.bluetoothAdapter.getRemoteDevice(macAddress);
@@ -161,6 +180,7 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void disconnect(PluginCall call) {
+		saveCall(call);
 		this.checkEntities();
 		connectCallback = null;
 		this.capacitorBluetoothSerialService.stop();
@@ -169,6 +189,7 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void enable(PluginCall call) {
+		saveCall(call);
 		this.checkEntities();
 		enableBluetoothCallback = call;
 		Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -177,6 +198,7 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void isConnected(PluginCall call) {
+		saveCall(call);
 		this.checkEntities();
 		if (this.capacitorBluetoothSerialService.getState() == CapacitorBluetoothSerialService.STATE_CONNECTED) {
 			call.resolve();
@@ -187,6 +209,7 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void isEnabled(PluginCall call) {
+		saveCall(call);
 		this.checkEntities();
 		if (this.bluetoothAdapter.isEnabled()) {
 			call.resolve();
@@ -197,6 +220,7 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void subscribeRawData(PluginCall call) {
+		saveCall(call);
 		this.checkEntities();
 		rawDataAvailableCallback = call;
 		// PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
@@ -206,6 +230,7 @@ public class CapacitorBluetoothSerial extends Plugin {
 
 	@PluginMethod()
 	public void write(PluginCall call) {
+		saveCall(call);
 		this.checkEntities();
 		String _data = call.getString("data");
 		byte[] data = _data.getBytes();
@@ -239,6 +264,23 @@ public class CapacitorBluetoothSerial extends Plugin {
 			this.capacitorBluetoothSerialService.stop();
 		}
 	}
+
+	@Override
+    protected void handleRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.handleRequestPermissionsResult(requestCode, permissions, grantResults);
+        for(int result:grantResults) {
+            if(result == PackageManager.PERMISSION_DENIED) {
+				Log.d(TAG, "User *rejected* location permission");
+				PluginCall savedCall = getSavedCall();
+        		if (savedCall == null) {
+					Log.d(TAG, "No stored plugin call for permissions request result");
+					return;
+				}
+				savedCall.reject(PERMISSION_BT_DENIED);
+                return;
+            }
+        }
+    }
 
 	// The Handler that gets information back from the CapacitorBluetoothSerialService
 	// Original code used handler for the because it was talking to the UI.
