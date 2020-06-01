@@ -30,6 +30,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Set;
 
 /**
@@ -229,14 +232,34 @@ public class CapacitorBluetoothSerial extends Plugin {
 	}
 
 	@PluginMethod()
-	public void write(PluginCall call) {
+	public void write(PluginCall call) throws JSONException {
 		saveCall(call);
 		this.checkEntities();
-		String _data = call.getString("data");
-		byte[] data = _data.getBytes();
-		this.capacitorBluetoothSerialService.write(data);
+		Log.d(TAG,"write call data: "+call.getData().toString());
+		JSONArray data = call.getArray("data");
+		int[] arr = new int[data.length()];
+		for(int i=0;i<data.length();i++){
+			arr[i] = data.getInt(i);
+			Log.d(TAG,String.valueOf(i)+": ");
+			Log.d(TAG,String.valueOf(arr[i]));
+		}
+		byte[] buffer = writeInts(arr);
+		this.capacitorBluetoothSerialService.write(buffer);
 		call.resolve();
 	}
+
+	private static byte[] writeInts(int[] array) {
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream(array.length * 4);
+            DataOutputStream dos = new DataOutputStream(bos);
+            for (int i = 0; i < array.length; i++) {
+                dos.writeInt(array[i]);
+            }
+            return bos.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 	@Override
   	protected void handleOnActivityResult(int requestCode, int resultCode, Intent data) {

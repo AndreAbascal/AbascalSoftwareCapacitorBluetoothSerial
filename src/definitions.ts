@@ -1,3 +1,5 @@
+// import { Observable } from 'rxjs';
+
 declare module "@capacitor/core" {
 	interface PluginRegistry {
 		CapacitorBluetoothSerial: CapacitorBluetoothSerialPlugin;

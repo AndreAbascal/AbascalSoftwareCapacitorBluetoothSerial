@@ -1,5 +1,6 @@
 import { WebPlugin,registerWebPlugin } from '@capacitor/core';
 import { CapacitorBluetoothSerialPlugin } from './definitions';
+// import { Observable, from } from 'rxjs';
 
 export class CapacitorBluetoothSerialWeb extends WebPlugin implements CapacitorBluetoothSerialPlugin {
 	constructor() {
@@ -15,13 +16,23 @@ export class CapacitorBluetoothSerialWeb extends WebPlugin implements CapacitorB
 		});
 	}
 	connect(address: string): Promise<any> {
+		// return from(() => {
+		// 	return new Promise((resolve) => {
+		// 		return resolve("Connected to "+address);
+		// 	});
+		// });
 		return new Promise((resolve) => {
 			return resolve("Connected to "+address);
 		});
 	}
-	connectInsecure(): Promise<any> {
+	connectInsecure(address: string): Promise<any> {
+		// return from(() => {
+		// 	return new Promise((resolve) => {
+		// 		return resolve("Connected insecurely to "+address);
+		// 	});
+		// });
 		return new Promise((resolve) => {
-			return resolve();
+			return resolve("Connected insecurely to "+address);
 		});
 	}
 	disconnect(): Promise<any> {

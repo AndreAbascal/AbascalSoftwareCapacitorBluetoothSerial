@@ -4,7 +4,7 @@ export declare class CapacitorBluetoothSerialWeb extends WebPlugin implements Ca
     constructor();
     clear(): Promise<any>;
     connect(address: string): Promise<any>;
-    connectInsecure(): Promise<any>;
+    connectInsecure(address: string): Promise<any>;
     disconnect(): Promise<any>;
     enable(): Promise<any>;
     isConnected(): Promise<any>;

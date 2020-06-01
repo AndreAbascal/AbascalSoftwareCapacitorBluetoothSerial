@@ -10,4 +10,8 @@
 9        android:targetSdkVersion="29" />
 9-->/home/andreabascal/Documents/ionic/purificattacapacitor/node_modules/AbascalSoftwareCapacitorBluetoothSerial/android/src/main/AndroidManifest.xml
 10
-11</manifest>
+11    <uses-permission android:name="android.permission.BLUETOOTH" />
+11-->/home/andreabascal/Documents/ionic/purificattacapacitor/node_modules/AbascalSoftwareCapacitorBluetoothSerial/android/src/main/AndroidManifest.xml:5:7-70
+11-->/home/andreabascal/Documents/ionic/purificattacapacitor/node_modules/AbascalSoftwareCapacitorBluetoothSerial/android/src/main/AndroidManifest.xml:5:24-67
+12
+13</manifest>
